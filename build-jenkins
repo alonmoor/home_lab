@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = "my-docker-image"
+        DOCKER_CONTAINER = "my-running-container"
+    }
+
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("${DOCKER_IMAGE}")
+                }
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    try {
+                        docker.image("${DOCKER_IMAGE}").run("--name ${DOCKER_CONTAINER} -d")
+                    } catch (exc) {
+                        echo "Error: ${exc}"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh "docker stop ${DOCKER_CONTAINER}"
+            sh "docker rm ${DOCKER_CONTAINER}"
+        }
+    }
+}
